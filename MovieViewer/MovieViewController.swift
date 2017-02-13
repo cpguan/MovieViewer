@@ -14,6 +14,9 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var searchBar: UISearchBar!
+    @IBOutlet weak var reloadButton: UIButton!
+    
+    @IBOutlet weak var collectionView: UICollectionView!
     
     var movies: [NSDictionary]?
     var endpoint: String = ""
@@ -37,23 +40,23 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
     }
     
     func refreshControlAction(refreshControl: UIRefreshControl) {
-        
         loadData()
         refreshControl.endRefreshing()
         
     }
     
-    func loadData() {
+    func loadData( ) {
         
         tableView.dataSource = self
         tableView.delegate = self
-        
         
         let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
         let url = URL(string: "https://api.themoviedb.org/3/movie/\(endpoint)?api_key=\(apiKey)")!
         let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
+        let refreshControl = UIRefreshControl()
         
+        refreshControl.beginRefreshing()
         
         MBProgressHUD.showAdded(to: self.view, animated: true)
         
@@ -65,18 +68,47 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
                     self.movies = dataDictionary["results"] as? [NSDictionary]
                     self.filteredDate = self.movies
                     
+                    if  self.reloadButton.isHidden == false {
+                        UIView.animate(withDuration: 0.3, delay: 0, options: UIViewAnimationOptions.curveEaseIn,
+                            animations: {
+                                self.reloadButton.isHidden = true
+                                var frame =  self.tableView.frame
+                                frame.origin.y = frame.origin.y - self.reloadButton.frame.size.height
+                                self.tableView.frame = frame
+                            })
+                    }
+                    
+                    refreshControl.endRefreshing()
                     self.tableView.reloadData()
-                    
-                    MBProgressHUD.hide(for: self.view, animated: true)
-                    
                 }
+                    
+            } else {
+                    if self.reloadButton.isHidden {
+                        UIView.animate(withDuration: 0.3, delay: 0, options: UIViewAnimationOptions.curveEaseIn,
+                            animations: {
+                                self.reloadButton.isHidden = false
+                                var frame = self.tableView.frame
+                                frame.origin.y  = frame.origin.y + self.reloadButton.frame.size.height
+                                self.tableView.frame = frame
+                        })
+                    }
+                
             }
-        }
+            
+            MBProgressHUD.hide(for: self.view, animated: true)
+            
+            }
         task.resume()
 
         // Do any additional setup after loading the view.
     }
 
+    @IBAction func reloaDate(_ sender: UIButton) {
+        //MBProgressHUD.showAdded(to: self.view, animated: true)
+        self.loadData()
+        
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -121,6 +153,9 @@ class MovieViewController: UIViewController, UITableViewDataSource, UITableViewD
         tableView.reloadData()
     }
 
+    
+    
+    
     
     // MARK: - Navigation
 
